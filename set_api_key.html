@@ -70,7 +70,10 @@
 <body>
     <div class="container">
         <h1 class="text-3xl font-bold text-gray-800 mb-6">APIキー設定</h1>
-        <p class="text-gray-600 mb-6">Google Generative Language APIキーを入力して保存してください。</p>
+        <p class="text-gray-600 mb-6">
+            Google Generative Language APIキーを入力して保存してください。<br>
+            APIキーは<a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-blue-500 hover:underline">Google Cloud Consoleの認証情報ページ</a>で取得できます。
+        </p>
         <input type="text" id="apiKeyInput" class="input-field" placeholder="ここにAPIキーを入力">
         <button onclick="saveApiKey()" class="save-button">APIキーを保存</button>
         <div id="message" class="message hidden"></div>
