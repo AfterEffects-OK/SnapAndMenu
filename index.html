@@ -174,7 +174,11 @@
               });
 
               const payload = { contents: apiChatHistory };
-              const apiKey = ''; // Canvas環境では自動的に提供されるため空のまま
+              // ここにあなたのGoogle Cloud APIキーを貼り付けてください。
+              // 例: const apiKey = 'YOUR_API_KEY_HERE';
+              // 注意: クライアントサイドにAPIキーを直接埋め込むのはセキュリティリスクがあります。
+              // 本番環境では、APIキーをサーバーサイドで管理するなどの対策を強く推奨します。
+              const apiKey = ''; 
               const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
               const response = await fetch(apiUrl, {
@@ -258,7 +262,11 @@
               apiChatHistory.push({ role: 'user', parts: [{ text: prompt }] });
 
               const payload = { contents: apiChatHistory };
-              const apiKey = ''; // Canvas環境では自動的に提供されるため空のまま
+              // ここにあなたのGoogle Cloud APIキーを貼り付けてください。
+              // 例: const apiKey = 'YOUR_API_KEY_HERE';
+              // 注意: クライアントサイドにAPIキーを直接埋め込むのはセキュリティリスクがあります。
+              // 本番環境では、APIキーをサーバーサイドで管理するなどの対策を強く推奨します。
+              const apiKey = ''; 
               const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
               const response = await fetch(apiUrl, {
@@ -309,7 +317,11 @@
               ];
 
               const payload = { contents: apiChatHistory };
-              const apiKey = ''; // Canvas環境では自動的に提供されるため空のまま
+              // ここにあなたのGoogle Cloud APIキーを貼り付けてください。
+              // 例: const apiKey = 'YOUR_API_KEY_HERE';
+              // 注意: クライアントサイドにAPIキーを直接埋め込むのはセキュリティリスクがあります。
+              // 本番環境では、APIキーをサーバーサイドで管理するなどの対策を強く推奨します。
+              const apiKey = ''; 
               const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
               const response = await fetch(apiUrl, {
