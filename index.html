@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>パッとメニュー</title>
+    <!-- Tailwind CSS CDNを読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Babel Standaloneを読み込み (JSXをブラウザで変換するため) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- ReactとReactDOMのUMDビルドを読み込み (Babelがグローバル変数として利用するため) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <style>
+        /* Interフォント、Hachi Maru Popフォント、Kiwi Maruフォント、Puikkoフォントを読み込む */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Hachi+Maru+Pop&family=Kiwi+Maru:wght@400;700&family=Puikko&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* エラーメッセージのアニメーション（Tailwind CSSのJITモードやカスタム設定がない場合のために直接定義） */
+        @keyframes bounce-in {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+        .animate-bounce-in {
+            animation: bounce-in 0.5s ease-out forwards;
+        }
+
+        /* 文字がジャンプするアニメーションのキーフレーム */
+        @keyframes jump {
+            0% { transform: translateY(0); }
+            20% { transform: translateY(-10px); } /* 上にジャンプ */
+            40% { transform: translateY(0); }
+            60% { transform: translateY(-5px); } /* 少し跳ね返る */
+            80% { transform: translateY(0); }
+            100% { transform: translateY(0); }
+        }
+
+        /* ホバー時に各文字にアニメーションを適用 */
+        .app-title:hover .char {
+            display: inline-block; /* transformを適用するために必要 */
+            animation: jump 0.8s ease-out forwards; /* 0.8秒で1回再生し、最終状態を保持 */
+        }
+
+        /* 各文字にアニメーションの遅延を設定してスタッガード効果を作成 */
+        /* 絵文字が最初の子要素なので、文字はnth-child(2)から始まる */
+        .app-title:hover .char:nth-child(2) { animation-delay: 0s; } /* パ */
+        .app-title:hover .char:nth-child(3) { animation-delay: 0.05s; } /* ッ */
+        .app-title:hover .char:nth-child(4) { animation-delay: 0.1s; } /* と */
+        .app-title:hover .char:nth-child(5) { animation-delay: 0.15s; } /* メ */
+        .app-title:hover .char:nth-child(6) { animation-delay: 0.2s; } /* ニ */
+        .app-title:hover .char:nth-child(7) { animation-delay: 0.25s; } /* ュ */
+        .app-title:hover .char:nth-child(8) { animation-delay: 0.3s; } /* ー */
+
+        /* アプリタイトル全体のフォントを適用 */
+        .app-title {
+            font-family: 'Hachi Maru Pop', cursive;
+        }
+
+        /* 「パッ」の部分に可愛らしい太字フォントを適用 */
+        .cute-bold-char {
+            font-family: 'Puikko', cursive; /* フォントをPuikkoに変更 */
+            font-weight: 700; /* 太字 */
+            /* font-size は個別のspan要素に直接指定するため削除 */
+            /* letter-spacing は削除またはコメントアウト */
+        }
+
+        /* 食卓風の背景パターン */
+        .table-background {
+            background-color: #fdfaf6; /* ベースのクリーム色 */
+            background-image: repeating-linear-gradient(45deg, #fcefe8 0%, #fcefe8 15px, #fdfaf6 15px, #fdfaf6 30px);
+            background-size: 30px 30px; /* パターンのサイズを少し大きくして目立たせる */
+        }
+    </style>
+</head>
+<body>
+    <noscript>JavaScriptを有効にしてください。このアプリケーションはJavaScriptが必要です。</noscript>
+    <!-- Reactアプリケーションがマウントされるルート要素 -->
+    <div id="root"></div>
+
+    <!-- ReactアプリケーションのJavaScriptコードを埋め込み -->
+    <script type="text/babel">
+        // ReactとReactDOMはすでにグローバルに利用可能
+        const { useState, useRef, useEffect } = React; // Reactオブジェクトからフックを直接取得
+
+        // メインのAppコンポーネント
+        const App = () => {
+          // 選択された画像ファイルの状態
+          const [selectedImage, setSelectedImage] = useState(null);
+          // 画像プレビューURLの状態
+          const [imagePreviewUrl, setImagePreviewUrl] = useState('');
+          // 解析された食材のリストの状態 (各食材に選択状態を追加)
+          const [ingredients, setIngredients] = useState([]); // 例: [{ name: 'りんご', selected: true }]
+          // 生成されたレシピの状態
+          const [recipes, setRecipes] = useState('');
+          // ローディング状態（API呼び出し中かどうか）
+          const [loading, setLoading] = useState(false);
+          // エラーメッセージの状態
+          const [error, setError] = useState('');
+          // ドラッグ中かどうかの状態
+          const [isDragging, setIsDragging] = useState(false);
+          // チャット履歴の状態
+          const [chatHistory, setChatHistory] = useState([]);
+          // 現在のチャット入力メッセージの状態
+          const [currentChatMessage, setCurrentChatMessage] = useState('');
+          // チャットがアクティブかどうか（レシピ提案後のみ表示）
+          const [isChatActive, setIsChatActive] = useState(false);
+
+          // 解析結果セクションへの参照
+          const ingredientsSectionRef = useRef(null);
+          // 提案された献立セクションへの参照
+          const recipesSectionRef = useRef(null);
+          // チャット履歴のスクロール用参照
+          const chatHistoryRef = useRef(null);
+
+          // 画像ファイルが選択されたときのハンドラー
+          const handleImageChange = (file) => { // ファイルを直接受け取るように変更
+            if (file) {
+              setSelectedImage(file);
+              setImagePreviewUrl(URL.createObjectURL(file));
+              setIngredients([]);
+              setRecipes('');
+              setError('');
+              setChatHistory([]); // 新しい画像がアップロードされたらチャット履歴をクリア
+              setIsChatActive(false); // チャットを非アクティブにする
+            } else {
+              setSelectedImage(null);
+              setImagePreviewUrl('');
+            }
+          };
+
+          // 画像をBase64に変換するヘルパー関数
+          const toBase64 = (file) => {
+            return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.readAsDataURL(file);
+              reader.onload = () => resolve(reader.result.split(',')[1]);
+              reader.onerror = (error) => reject(error);
+            });
+          };
+
+          // 画像を解析し、食材を特定する関数
+          const analyzeImage = async () => {
+            if (!selectedImage) {
+              setError('画像をアップロードしてください。');
+              return;
+            }
+
+            setLoading(true);
+            setError('');
+            setIngredients([]);
+            setRecipes(''); // 解析前にレシピもクリア
+            setChatHistory([]); // 解析前にチャット履歴もクリア
+            setIsChatActive(false); // チャットを非アクティブにする
+
+            try {
+              const base64ImageData = await toBase64(selectedImage);
+
+              const apiChatHistory = [];
+              apiChatHistory.push({
+                role: 'user',
+                parts: [
+                  { text: 'この冷蔵庫の画像から食材を特定してください。リスト形式で箇条書きにしてください。各項目はハイフンで始めてください。例：- りんご\n- 卵\n- 牛乳' },
+                  {
+                    inlineData: {
+                      mimeType: selectedImage.type,
+                      data: base64ImageData,
+                    },
+                  },
+                ],
+              });
+
+              const payload = { contents: apiChatHistory };
+              const apiKey = '';
+              const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+              const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+              });
+
+              const result = await response.json();
+
+              if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+                let text = result.candidates[0].content.parts[0].text;
+
+                const unwantedPrefixes = [
+                  'この冷蔵庫の画像から特定できる食材は以下の通りです。',
+                  '冷蔵庫の画像から特定できる食材は以下の通りです。',
+                  '特定された食材は以下の通りです。',
+                  '以下に冷蔵庫の画像から特定された食材をリストアップします。',
+                  '冷蔵庫の画像に基づき、特定された食材のリストは以下の通りです。',
+                  '冷蔵庫にある食材は以下の通りです。',
+                  '以下は画像から特定された食材です。',
+                  '画像から検出された食材：'
+                ];
+
+                for (const prefix of unwantedPrefixes) {
+                  if (text.startsWith(prefix)) {
+                    text = text.substring(prefix.length).trim();
+                    break;
+                  }
+                }
+
+                const parsedIngredients = text.split('\n')
+                  .map(item => item.trim())
+                  .filter(item => item.startsWith('- ') && item.length > 2)
+                  .map(name => ({ name: name.replace(/^- /, '').trim(), selected: true }));
+                setIngredients(parsedIngredients);
+              } else {
+                setError('食材の解析に失敗しました。');
+                console.error('API Response Error:', result);
+              }
+            } catch (err) {
+              setError('画像の解析中にエラーが発生しました: ' + err.message);
+              console.error('Image analysis error:', err);
+            } finally {
+              setLoading(false);
+            }
+          };
+
+          // 食材の選択状態を切り替えるハンドラー
+          const handleIngredientToggle = (index) => {
+            setIngredients(prevIngredients =>
+              prevIngredients.map((item, i) =>
+                i === index ? { ...item, selected: !item.selected } : item
+              )
+            );
+          };
+
+          // 食材に基づいて献立を提案する関数
+          const generateRecipes = async () => {
+            const selectedIngredients = ingredients
+              .filter(item => item.selected)
+              .map(item => item.name);
+
+            if (selectedIngredients.length === 0) {
+              setError('献立を提案するには、少なくとも1つの食材を選択してください。');
+              return;
+            }
+
+            setLoading(true);
+            setError('');
+            setRecipes('');
+            setChatHistory([]); // 新しいレシピ提案の前にチャット履歴をクリア
+            setIsChatActive(false); // レシピ生成中はチャットを非アクティブにする
+
+            try {
+              const ingredientsList = selectedIngredients.join(', ');
+              const prompt = `以下の食材を使って、実用的な献立をいくつか提案してください。各献立には、料理名、簡単な説明、主要な材料を含めてください。箇条書きでお願いします。
+              食材: ${ingredientsList}`;
+
+              const apiChatHistory = [];
+              apiChatHistory.push({ role: 'user', parts: [{ text: prompt }] });
+
+              const payload = { contents: apiChatHistory };
+              const apiKey = '';
+              const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+              const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+              });
+
+              const result = await response.json();
+
+              if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+                const text = result.candidates[0].content.parts[0].text;
+                setRecipes(text);
+                // レシピ生成後、チャット履歴に最初のAI応答を追加し、チャットをアクティブにする
+                setChatHistory([{ role: 'model', text: text }]);
+                setIsChatActive(true);
+              } else {
+                setError('献立の生成に失敗しました。');
+                console.error('API Response Error:', result);
+              }
+            } catch (err) {
+              setError('献立の生成中にエラーが発生しました: ' + err.message);
+              console.error('Recipe generation error:', err);
+            } finally {
+              setLoading(false);
+            }
+          };
+
+          // チャットメッセージを送信する関数
+          const sendChatMessage = async () => {
+            if (!currentChatMessage.trim()) return; // 空のメッセージは送信しない
+
+            const userMessage = currentChatMessage;
+            setCurrentChatMessage(''); // 入力フィールドをクリア
+
+            // ユーザーメッセージをチャット履歴に追加
+            setChatHistory(prev => [...prev, { role: 'user', text: userMessage }]);
+            setLoading(true);
+            setError('');
+
+            try {
+              // APIに送信するチャット履歴を構築
+              // 最初のレシピ提案のプロンプトと応答を含めることで、会話のコンテキストを維持
+              const apiChatHistory = [
+                { role: 'user', parts: [{ text: `以下の食材を使って、実用的な献立をいくつか提案してください。各献立には、料理名、簡単な説明、主要な材料を含めてください。箇条書きでお願いします。\n食材: ${ingredients.filter(item => item.selected).map(item => item.name).join(', ')}` }] },
+                { role: 'model', parts: [{ text: recipes }] }, // 最初のレシピ提案
+                { role: 'user', parts: [{ text: userMessage }] } // ユーザーの新しいメッセージ
+              ];
+
+              const payload = { contents: apiChatHistory };
+              const apiKey = '';
+              const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+              const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+              });
+
+              const result = await response.json();
+
+              if (result.candidates && result.candidates.length > 0 && result.candidates[0].content && result.candidates[0].content.parts && result.candidates[0].content.parts.length > 0) {
+                const aiResponse = result.candidates[0].content.parts[0].text;
+                setChatHistory(prev => [...prev, { role: 'model', text: aiResponse }]);
+              } else {
+                setError('AIからの応答を取得できませんでした。');
+                console.error('API Response Error:', result);
+              }
+            } catch (err) {
+              setError('チャット中にエラーが発生しました: ' + err.message);
+              console.error('Chat error:', err);
+            } finally {
+              setLoading(false);
+            }
+          };
+
+          // ドラッグオーバー時のハンドラー
+          const handleDragOver = (event) => {
+            event.preventDefault();
+            setIsDragging(true);
+          };
+
+          // ドラッグリーブ時のハンドラー
+          const handleDragLeave = () => {
+            setIsDragging(false);
+          };
+
+          // ドロップ時のハンドラー
+          const handleDrop = (event) => {
+            event.preventDefault();
+            setIsDragging(false);
+
+            const files = event.dataTransfer.files;
+            if (files && files.length > 0) {
+              const file = files[0];
+              if (file.type.startsWith('image/')) {
+                handleImageChange(file);
+              } else {
+                setError('画像ファイルのみをドロップしてください。');
+              }
+            }
+          };
+
+          // ingredientsが更新され、かつ空でない場合にスクロール
+          useEffect(() => {
+            if (ingredients.length > 0 && ingredientsSectionRef.current) {
+              ingredientsSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, [ingredients]);
+
+          // recipesが更新され、かつ空でない場合にスクロール
+          useEffect(() => {
+            if (recipes && recipesSectionRef.current) {
+              recipesSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, [recipes]);
+
+          // チャット履歴が更新されたときにスクロール
+          useEffect(() => {
+            if (chatHistoryRef.current) {
+              chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
+            }
+          }, [chatHistory]);
+
+          return (
+            <> {/* React Fragment を追加 */}
+              <div className="min-h-screen p-4 font-sans flex flex-col items-center justify-center py-12 table-background">
+                <h1 className="app-title text-5xl font-extrabold text-gray-800 mb-10 text-center drop-shadow-lg tracking-tight">
+                  {/* 絵文字アイコンの追加 */}
+                  <span style={{ display: 'inline-block', marginRight: '10px', verticalAlign: 'middle', fontSize: '1.2em' }}>
+                      🍴
+                  </span>
+                  {/* アプリ名の変更と文字ごとのspan */}
+                  <span className="char text-orange-500 cute-bold-char" style={{ marginRight: '-16px', fontSize: '80px' }}>パ</span> {/* パのフォントサイズを80pxに */}
+                  <span className="char text-orange-500 cute-bold-char" style={{ marginRight: '-14px' }}>ッ</span> {/* ここを-14pxに変更 */}
+                  <span className="char" style={{ fontSize: '40px', marginRight: '-10px' }}>と</span> {/* とのフォントサイズを40pxに、マージンを-10pxに */}
+                  <span className="char">メ</span>
+                  <span className="char">ニ</span>
+                  <span className="char">ュ</span>
+                  <span className="char">ー</span>
+                </h1>
+
+                <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full mb-10 transform transition-all duration-300 hover:scale-[1.01] hover:shadow-3xl border border-gray-100">
+                  <h2 className="text-3xl font-bold text-gray-700 mb-6 border-b-2 border-blue-200 pb-4 text-center">
+                    1. 冷蔵庫の写真をアップロード
+                  </h2>
+                  {/* ドラッグアンドドロップエリア */}
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`border-4 border-dashed rounded-2xl p-10 text-center cursor-pointer mb-8
+                      ${isDragging ? 'border-blue-500 bg-blue-50 ring-4 ring-blue-200' : 'border-gray-300 bg-gray-50'}
+                      hover:border-blue-400 hover:bg-blue-50 transition duration-300 ease-in-out transform hover:scale-[1.005]`}
+                  >
+                    <p className="text-xl text-gray-700 font-medium mb-3">画像をここにドラッグ＆ドロップ</p>
+                    <p className="text-lg text-gray-500 mb-5">または</p>
+                    <label htmlFor="file-upload" className="inline-block bg-gradient-to-r from-blue-500 to-blue-600 text-white font-bold py-3 px-8 rounded-full cursor-pointer
+                      shadow-lg hover:from-blue-600 hover:to-blue-700 transition duration-300 transform hover:-translate-y-1 hover:shadow-xl">
+                      ファイルを選択
+                    </label>
+                    <input
+                      id="file-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageChange(e.target.files[0])}
+                      className="hidden"
+                    />
+                  </div>
+
+
+                  {imagePreviewUrl && (
+                    <div className="mb-8 flex justify-center">
+                      <img
+                        src={imagePreviewUrl}
+                        alt="冷蔵庫のプレビュー"
+                        className="max-w-full h-auto rounded-2xl shadow-xl border-4 border-blue-100"
+                        style={{ maxHeight: '350px' }}
+                      />
+                    </div>
+                  )}
+
+                  <button
+                    onClick={analyzeImage}
+                    disabled={loading || !selectedImage}
+                    className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white font-bold py-4 px-8 rounded-full
+                      hover:from-teal-600 hover:to-teal-700 transition duration-300 ease-in-out
+                      shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xl transform hover:-translate-y-1"
+                  >
+                    {loading ? (
+                      <svg className="animate-spin h-6 w-6 mr-3 text-white" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      'AIで食材を解析'
+                    )}
+                  </button>
+                </div>
+
+                {error && (
+                  <div className="bg-red-100 border border-red-400 text-red-700 px-6 py-4 rounded-xl relative max-w-2xl w-full mb-10 shadow-md animate-bounce-in" role="alert">
+                    <strong className="font-bold">エラー: </strong>
+                    <span className="block sm:inline">{error}</span>
+                  </div>
+                )}
+
+                {ingredients.length > 0 && (
+                  <div ref={ingredientsSectionRef} className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full mb-10 transform transition-all duration-300 hover:scale-[1.01] hover:shadow-3xl border border-gray-100">
+                    <h2 className="text-3xl font-bold text-gray-700 mb-6 border-b-2 border-blue-200 pb-4 text-center">
+                      2. 解析された食材と選択
+                    </h2>
+                    <p className="text-gray-600 mb-6 text-lg text-center">
+                      レシピ提案に使わない食材はチェックを外してください。
+                    </p>
+                    <ul className="text-gray-800 text-xl space-y-3 mb-8">
+                      {ingredients.map((item, index) => (
+                        <li key={index} className="flex items-center bg-gray-50 p-3 rounded-lg shadow-sm hover:bg-gray-100 transition duration-200">
+                          <input
+                            type="checkbox"
+                            checked={item.selected}
+                            onChange={() => handleIngredientToggle(index)}
+                            className="form-checkbox h-6 w-6 text-blue-600 rounded-md mr-4 cursor-pointer focus:ring-blue-500"
+                          />
+                          <label className="cursor-pointer font-medium">{item.name}</label>
+                        </li>
+                      ))}
+                    </ul>
+                    <button
+                      onClick={generateRecipes}
+                      disabled={loading || ingredients.filter(item => item.selected).length === 0}
+                      className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-4 px-8 rounded-full
+                        hover:from-green-600 hover:to-green-700 transition duration-300 ease-in-out
+                        shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-xl transform hover:-translate-y-1"
+                  >
+                    {loading ? (
+                      <svg className="animate-spin h-6 w-6 mr-3 text-white" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      '献立を提案'
+                    )}
+                  </button>
+                </div>
+                )}
+
+                {recipes && (
+                  <div ref={recipesSectionRef} className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full mb-10 transform transition-all duration-300 hover:scale-[1.01] hover:shadow-3xl border border-gray-100">
+                    <h2 className="text-3xl font-bold text-gray-700 mb-6 border-b-2 border-blue-200 pb-4 text-center">
+                      3. 提案された献立
+                    </h2>
+                    <div className="prose max-w-none text-gray-800 leading-relaxed text-lg">
+                      <p dangerouslySetInnerHTML={{ __html: recipes.replace(/\n/g, '<br />') }}></p>
+                    </div>
+
+                    {/* AIチャットセクション */}
+                    {isChatActive && (
+                      <div className="mt-8 pt-6 border-t-2 border-gray-200">
+                        <h3 className="text-2xl font-bold text-gray-700 mb-4 text-center">
+                          AIと会話する
+                        </h3>
+                        <div ref={chatHistoryRef} className="bg-gray-50 p-4 rounded-xl h-64 overflow-y-auto mb-4 border border-gray-200 shadow-inner">
+                          {chatHistory.map((msg, index) => (
+                            <div key={index} className={`mb-3 p-3 rounded-lg max-w-[85%] ${msg.role === 'user' ? 'bg-blue-100 ml-auto text-right' : 'bg-green-100 mr-auto text-left'}`}>
+                              <p className="font-semibold text-sm mb-1">{msg.role === 'user' ? 'あなた' : 'AIアシスタント'}</p>
+                              <p className="text-gray-800 text-base">{msg.text}</p>
+                            </div>
+                          ))}
+                          {loading && (
+                            <div className="flex justify-center items-center p-3">
+                              <svg className="animate-spin h-6 w-6 text-blue-500" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <textarea
+                            className="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-none"
+                            rows="3"
+                            placeholder="献立について質問してください（例：この献立に合う飲み物は？、別の献立を提案して）"
+                            value={currentChatMessage}
+                            onChange={(e) => setCurrentChatMessage(e.target.value)}
+                            onKeyPress={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                sendChatMessage();
+                              }
+                            }}
+                            disabled={loading}
+                          ></textarea>
+                          <button
+                            onClick={sendChatMessage}
+                            disabled={loading || !currentChatMessage.trim()}
+                            className="bg-blue-500 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:bg-blue-600 transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                          >
+                            送信
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* AI分析の注意点セクション */}
+              <div className="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-800 p-6 rounded-lg shadow-md max-w-2xl w-full mt-10 mb-8 mx-auto">
+                <div className="flex items-center mb-2">
+                  <svg className="h-6 w-6 text-yellow-600 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <h3 className="text-xl font-bold text-center">AI分析に関する注意点</h3>
+                </div>
+                <p className="text-gray-700 text-base"> {/* text-centerを削除 */}
+                  AIは画像から食材を識別しますが、完璧ではありません。誤認識や認識漏れが発生する可能性があります（ハルシネーション）。<br />
+                  提案される献立は、AIが学習した情報に基づいて実用的なものを目指していますが、**必ずしも調理可能であったり、お好みの味付けであるとは限りません。**<br />
+                  **調理前にご自身でレシピの内容を確認し、必要に応じてWeb検索などで詳細な情報やレビューを参考にしてください。**最終的な判断はご自身で行ってください。
+                </p>
+              </div>
+            </>
+          );
+        };
+
+        // Reactアプリケーションをルート要素にレンダリング
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
