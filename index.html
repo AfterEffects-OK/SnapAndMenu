@@ -582,7 +582,7 @@
                 )}
 
                 {recipes && (
-                  <div ref={recipesSectionRef} className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full mb-10 transform transition-all duration-300 hover:scale-[1.01] hover:shadow-3xl border border-gray-100">
+                  <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-2xl w-full mb-10 transform transition-all duration-300 hover:scale-[1.01] hover:shadow-3xl border border-gray-100">
                     <h2 className="text-3xl font-bold text-gray-700 mb-6 border-b-2 border-blue-200 pb-4 text-center">
                       3. 提案された献立
                     </h2>
@@ -596,7 +596,7 @@
                         <h3 className="text-2xl font-bold text-gray-700 mb-4 text-center">
                           AIと会話する
                         </h3>
-                        <div ref={chatHistoryRef} className="bg-gray-50 p-4 rounded-xl h-64 overflow-y-auto mb-4 border border-gray-200 shadow-inner">
+                        <div className="bg-gray-50 p-4 rounded-xl h-64 overflow-y-auto mb-4 border border-gray-200 shadow-inner">
                           {chatHistory.map((msg, index) => (
                             <div key={index} className={`mb-3 p-3 rounded-lg max-w-[85%] ${msg.role === 'user' ? 'bg-blue-100 ml-auto text-right' : 'bg-green-100 mr-auto text-left'}`}>
                               <p className="font-semibold text-sm mb-1">{msg.role === 'user' ? 'あなた' : 'AIアシスタント'}</p>
@@ -605,7 +605,7 @@
                           ))}
                           {loading && (
                             <div className="flex justify-center items-center p-3">
-                              <svg className="animate-spin h-6 w-6 text-blue-500" viewBox="0 0 24 24">
+                              <svg className="animate-spin h-6 w-6 mr-3 text-white" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
@@ -682,8 +682,8 @@
                     </p>
                     <h3 className="text-xl font-bold text-gray-800 mb-2">4. APIキーを設定アプリで保存する</h3>
                     <p className="text-gray-700 mb-4">
-                      コピーしたAPIキーを、別途提供されている「APIキー設定アプリ」（`set_api_key.html`）で入力し、保存してください。<br />
-                      このアプリは、APIキーをブラウザのローカルストレージに安全に保存します。
+                      コピーしたAPIキーを、<a href="https://aftereffects-ok.github.io/SnapAndMenu/set_api_key.html" target="_blank" className="text-blue-500 hover:underline font-bold">APIキー設定アプリ</a>で入力し、「APIキーを保存」ボタンをクリックしてください。<br />
+                      APIキーはブラウザのローカルストレージに安全に保存されます。
                     </p>
                     <p className="text-red-600 font-bold text-sm">
                       **重要：セキュリティに関する警告**<br />
