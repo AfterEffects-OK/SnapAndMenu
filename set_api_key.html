@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>APIキー設定</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 20px;
+            border: 2px solid #cbd5e1; /* border-gray-300 */
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        .input-field:focus {
+            outline: none;
+            border-color: #3b82f6; /* border-blue-500 */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+        .save-button {
+            background-color: #22c55e; /* bg-green-500 */
+            color: white;
+            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 9999px; /* rounded-full */
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+        }
+        .save-button:hover {
+            background-color: #16a34a; /* bg-green-600 */
+            transform: translateY(-2px);
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .message.success {
+            background-color: #d1fae5; /* bg-green-100 */
+            color: #065f46; /* text-green-800 */
+        }
+        .message.error {
+            background-color: #fee2e2; /* bg-red-100 */
+            color: #991b1b; /* text-red-800 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">APIキー設定</h1>
+        <p class="text-gray-600 mb-6">Google Generative Language APIキーを入力して保存してください。</p>
+        <input type="text" id="apiKeyInput" class="input-field" placeholder="ここにAPIキーを入力">
+        <button onclick="saveApiKey()" class="save-button">APIキーを保存</button>
+        <div id="message" class="message hidden"></div>
+    </div>
+
+    <script>
+        // DOMContentLoadedイベントで初期化処理を実行
+        document.addEventListener('DOMContentLoaded', (event) => {
+            loadApiKey();
+        });
+
+        // APIキーをローカルストレージに保存する関数
+        function saveApiKey() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            const messageDiv = document.getElementById('message');
+
+            if (apiKey) {
+                localStorage.setItem('geminiApiKey', apiKey);
+                messageDiv.textContent = 'APIキーが正常に保存されました！';
+                messageDiv.className = 'message success';
+                messageDiv.classList.remove('hidden');
+            } else {
+                messageDiv.textContent = 'APIキーを入力してください。';
+                messageDiv.className = 'message error';
+                messageDiv.classList.remove('hidden');
+            }
+        }
+
+        // ローカルストレージからAPIキーを読み込む関数
+        function loadApiKey() {
+            const storedApiKey = localStorage.getItem('geminiApiKey');
+            const apiKeyInput = document.getElementById('apiKeyInput');
+            const messageDiv = document.getElementById('message');
+
+            if (storedApiKey) {
+                apiKeyInput.value = storedApiKey;
+                messageDiv.textContent = '保存されたAPIキーが読み込まれました。';
+                messageDiv.className = 'message success';
+                messageDiv.classList.remove('hidden');
+            } else {
+                apiKeyInput.value = '';
+                messageDiv.textContent = 'APIキーが設定されていません。';
+                messageDiv.className = 'message error';
+                messageDiv.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
