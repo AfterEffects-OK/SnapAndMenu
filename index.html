@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>パッとメニュー</title>
+    <!-- Content Security Policy (CSP) for Google Generative Language API -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com https://unpkg.com https://www.gstatic.com 'unsafe-inline'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self' https://generativelanguage.googleapis.com; font-src 'self' https://fonts.gstatic.com;">
     <!-- Tailwind CSS CDNを読み込み -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Babel Standaloneを読み込み (JSXをブラウザで変換するため) -->
@@ -172,7 +174,7 @@
               });
 
               const payload = { contents: apiChatHistory };
-              const apiKey = '';
+              const apiKey = ''; // Canvas環境では自動的に提供されるため空のまま
               const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
               const response = await fetch(apiUrl, {
@@ -256,7 +258,7 @@
               apiChatHistory.push({ role: 'user', parts: [{ text: prompt }] });
 
               const payload = { contents: apiChatHistory };
-              const apiKey = '';
+              const apiKey = ''; // Canvas環境では自動的に提供されるため空のまま
               const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
               const response = await fetch(apiUrl, {
@@ -307,7 +309,7 @@
               ];
 
               const payload = { contents: apiChatHistory };
-              const apiKey = '';
+              const apiKey = ''; // Canvas環境では自動的に提供されるため空のまま
               const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
               const response = await fetch(apiUrl, {
@@ -572,7 +574,7 @@
                   </svg>
                   <h3 className="text-xl font-bold text-center">AI分析に関する注意点</h3>
                 </div>
-                <p className="text-gray-700 text-base"> {/* text-centerを削除 */}
+                <p className="text-gray-700 text-base">
                   AIは画像から食材を識別しますが、完璧ではありません。誤認識や認識漏れが発生する可能性があります（ハルシネーション）。<br />
                   提案される献立は、AIが学習した情報に基づいて実用的なものを目指していますが、**必ずしも調理可能であったり、お好みの味付けであるとは限りません。**<br />
                   **調理前にご自身でレシピの内容を確認し、必要に応じてWeb検索などで詳細な情報やレビューを参考にしてください。**最終的な判断はご自身で行ってください。
